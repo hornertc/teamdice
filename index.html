@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Morning Team Dice</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #18202b;
+      --muted: #68717d;
+      --line: #d8dee7;
+      --panel: #ffffff;
+      --page: #eef3f8;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --warm: #f59e0b;
+      --done: #475569;
+      --shadow: 0 24px 60px rgba(28, 38, 55, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 20%, rgba(245, 158, 11, 0.16), transparent 30%),
+        linear-gradient(135deg, #eef3f8 0%, #f8fafc 52%, #e6f4f1 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    main {
+      width: min(1040px, 100%);
+      display: grid;
+      grid-template-columns: minmax(300px, 1.05fr) minmax(280px, 0.95fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .stage,
+    .panel {
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(216, 222, 231, 0.95);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .stage {
+      min-height: 620px;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 28px;
+    }
+
+    .panel {
+      padding: 24px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 20px;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 6vw, 4.65rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+      max-width: 10ch;
+    }
+
+    h2 {
+      font-size: 1.05rem;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.5;
+      margin-top: 16px;
+      max-width: 54ch;
+    }
+
+    .dice-wrap {
+      display: grid;
+      place-items: center;
+      min-height: 330px;
+      perspective: 980px;
+    }
+
+    .die-stage {
+      --cube-size: min(250px, 62vw);
+      --half-cube: calc(var(--cube-size) / 2);
+      width: var(--cube-size);
+      height: var(--cube-size);
+      position: relative;
+    }
+
+    .die-stage::after {
+      content: "";
+      position: absolute;
+      left: 10%;
+      right: 10%;
+      bottom: -42px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(24, 32, 43, 0.2);
+      filter: blur(14px);
+      transform: rotateX(72deg);
+    }
+
+    .die {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transform: translateZ(calc(var(--half-cube) * -1)) rotateX(-16deg) rotateY(24deg);
+      transition: transform 1050ms cubic-bezier(.18, .82, .24, 1);
+    }
+
+    .die.rolling {
+      transition-duration: 1150ms;
+    }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr) 24px;
+      gap: 18px;
+      align-items: center;
+      justify-items: center;
+      border: 2px solid #d0d8e3;
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.98), transparent 34%),
+        linear-gradient(145deg, #ffffff 0%, #eef4f8 100%);
+      box-shadow:
+        inset -14px -16px 28px rgba(134, 149, 169, 0.22),
+        inset 12px 14px 24px rgba(255, 255, 255, 0.88);
+      backface-visibility: hidden;
+      padding: 18px 18px 16px;
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .face.front { transform: rotateY(0deg) translateZ(var(--half-cube)); }
+    .face.back { transform: rotateY(180deg) translateZ(var(--half-cube)); }
+    .face.right { transform: rotateY(90deg) translateZ(var(--half-cube)); }
+    .face.left { transform: rotateY(-90deg) translateZ(var(--half-cube)); }
+    .face.top { transform: rotateX(90deg) translateZ(var(--half-cube)); }
+    .face.bottom { transform: rotateX(-90deg) translateZ(var(--half-cube)); }
+
+    .face.used,
+    .face.absent {
+      color: #7a8490;
+      background:
+        linear-gradient(145deg, #f2f5f8 0%, #e4e9ef 100%);
+    }
+
+    .face-photo {
+      display: block;
+      width: min(100%, 148px);
+      height: auto;
+      max-height: 100%;
+      aspect-ratio: 1;
+      min-height: 0;
+      border-radius: 6px;
+      border: 1px solid rgba(148, 163, 184, 0.42);
+      object-fit: cover;
+      box-shadow:
+        0 9px 18px rgba(24, 32, 43, 0.12),
+        0 0 0 4px rgba(255, 255, 255, 0.86);
+    }
+
+    .face.used .face-photo,
+    .face.absent .face-photo {
+      filter: grayscale(0.75);
+      opacity: 0.62;
+    }
+
+    .face-name {
+      width: 100%;
+      text-align: center;
+      font-size: clamp(0.9rem, 3.2vw, 1.12rem);
+      font-weight: 800;
+      letter-spacing: 0;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .die-meta {
+      margin-top: 14px;
+      color: var(--muted);
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+    }
+
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 8px;
+      min-height: 48px;
+      padding: 0 18px;
+      font: inherit;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .roll {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 14px 28px rgba(15, 118, 110, 0.24);
+    }
+
+    .roll:hover {
+      background: var(--accent-dark);
+    }
+
+    .reset {
+      background: #e2e8f0;
+      color: #263241;
+    }
+
+    .reset:hover {
+      background: #d3dce8;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.45;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+    }
+
+    .lists {
+      display: grid;
+      gap: 20px;
+      align-content: start;
+    }
+
+    .list-block {
+      display: grid;
+      gap: 10px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      min-height: 78px;
+      align-content: start;
+    }
+
+    .chip {
+      min-height: 0;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      color: #293443;
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-weight: 750;
+      line-height: 1;
+      box-shadow: none;
+    }
+
+    .chip:hover:not(:disabled) {
+      background: #ecfdf5;
+      border-color: rgba(15, 118, 110, 0.38);
+    }
+
+    .chip.used,
+    .chip.absent {
+      background: #e8ecef;
+      color: #717b87;
+      text-decoration: line-through;
+    }
+
+    .chip.absent {
+      border-style: dashed;
+    }
+
+    .order {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .order li {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      align-items: center;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #fff;
+      font-weight: 800;
+    }
+
+    .number {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #fef3c7;
+      color: #854d0e;
+      font-size: 0.84rem;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-style: italic;
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+    }
+
+    .complete {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #f8fafc;
+      color: var(--done);
+      padding: 12px;
+      font-weight: 750;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        align-items: stretch;
+        padding: 14px;
+      }
+
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .stage {
+        min-height: auto;
+        padding: 22px;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .dice-wrap {
+        min-height: 280px;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="stage" aria-labelledby="title">
+      <div>
+        <h1 id="title">Morning Team Dice</h1>
+        <p class="subtitle">Roll once for each update. After someone is selected, they are removed from the die until the next reset.</p>
+      </div>
+
+      <div class="dice-wrap" aria-live="polite">
+        <div>
+          <div class="die-stage">
+            <div class="die" id="die" aria-label="Six-sided team die">
+              <div class="face front" data-name="Tommy">
+                <img class="face-photo" src="tommy.jpg" alt="Tommy">
+                <span class="face-name">Tommy</span>
+              </div>
+              <div class="face right" data-name="Mary">
+                <img class="face-photo" src="mary.jpg" alt="Mary">
+                <span class="face-name">Mary</span>
+              </div>
+              <div class="face back" data-name="Jack">
+                <img class="face-photo" src="jack.jpg" alt="Jack">
+                <span class="face-name">Jack</span>
+              </div>
+              <div class="face left" data-name="Gary">
+                <img class="face-photo" src="gary.jpg" alt="Gary">
+                <span class="face-name">Gary</span>
+              </div>
+              <div class="face top" data-name="Ben">
+                <img class="face-photo" src="ben.jpg" alt="Ben">
+                <span class="face-name">Ben</span>
+              </div>
+              <div class="face bottom" data-name="Nancy">
+                <img class="face-photo" src="nancy.jpg" alt="Nancy">
+                <span class="face-name">Nancy</span>
+              </div>
+            </div>
+          </div>
+          <div class="die-meta" id="dieMeta">6 sides left</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="controls">
+          <button class="roll" id="rollButton" type="button">Roll</button>
+          <button class="reset" id="resetButton" type="button">Reset</button>
+        </div>
+        <p class="status" id="status">Start the meeting by rolling for the first update.</p>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="Meeting order">
+      <div class="list-block">
+        <h2>Still On The Die</h2>
+        <div class="chips" id="remainingList"></div>
+      </div>
+
+      <div class="lists">
+        <div class="list-block">
+          <h2>Update Order</h2>
+          <ol class="order" id="orderList"></ol>
+          <p class="empty" id="emptyOrder">No one has been rolled yet.</p>
+        </div>
+      </div>
+
+      <div class="complete" id="completeMessage" hidden>
+        Everyone has been selected. Reset when you are ready for another round.
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const team = ["Tommy", "Mary", "Jack", "Gary", "Ben", "Nancy"];
+    const faceTurns = {
+      Tommy: { x: 360, y: 720, z: 0 },
+      Mary: { x: 360, y: 630, z: 0 },
+      Jack: { x: 360, y: 540, z: 0 },
+      Gary: { x: 360, y: 810, z: 0 },
+      Ben: { x: 270, y: 720, z: 0 },
+      Nancy: { x: 450, y: 720, z: 0 }
+    };
+    let remaining = [...team];
+    let order = [];
+    let absent = new Set();
+    let isRolling = false;
+    let rollCount = 0;
+    let currentFaceName = null;
+
+    const die = document.querySelector("#die");
+    const faces = Array.from(document.querySelectorAll(".face"));
+    const dieMeta = document.querySelector("#dieMeta");
+    const status = document.querySelector("#status");
+    const rollButton = document.querySelector("#rollButton");
+    const resetButton = document.querySelector("#resetButton");
+    const remainingList = document.querySelector("#remainingList");
+    const orderList = document.querySelector("#orderList");
+    const emptyOrder = document.querySelector("#emptyOrder");
+    const completeMessage = document.querySelector("#completeMessage");
+
+    function pickRandomName() {
+      const index = Math.floor(Math.random() * remaining.length);
+      const [name] = remaining.splice(index, 1);
+      order.push(name);
+      return name;
+    }
+
+    function pluralizeSide(count) {
+      return count === 1 ? "1 side left" : `${count} sides left`;
+    }
+
+    function syncRollButton() {
+      rollButton.disabled = remaining.length === 0 || isRolling;
+    }
+
+    function syncFaceStates() {
+      faces.forEach((face) => {
+        const isAbsent = absent.has(face.dataset.name);
+        const hasBeenRolled = order.includes(face.dataset.name);
+        const isCurrentFace = face.dataset.name === currentFaceName;
+        face.classList.toggle("absent", isAbsent);
+        face.classList.toggle("used", hasBeenRolled && !isCurrentFace);
+      });
+    }
+
+    function setCompleteMessage() {
+      if (remaining.length > 0) {
+        completeMessage.hidden = true;
+        return;
+      }
+
+      completeMessage.hidden = false;
+      if (order.length > 0) {
+        completeMessage.textContent = "Everyone currently on the die has been selected. Reset when you are ready for another round.";
+      } else {
+        completeMessage.textContent = "No one is currently on the die. Click a name to add someone back.";
+      }
+    }
+
+    function render() {
+      remainingList.innerHTML = "";
+      team.forEach((name) => {
+        const chip = document.createElement("button");
+        const isAbsent = absent.has(name);
+        const hasBeenRolled = order.includes(name);
+        chip.className = `chip${hasBeenRolled ? " used" : ""}${isAbsent ? " absent" : ""}`;
+        chip.type = "button";
+        chip.textContent = name;
+        chip.disabled = isRolling || hasBeenRolled;
+        chip.setAttribute("aria-pressed", String(isAbsent));
+        chip.title = isAbsent ? `Add ${name} back to the die` : `Remove ${name} from the die`;
+        chip.addEventListener("click", () => toggleAttendance(name));
+        remainingList.appendChild(chip);
+      });
+
+      orderList.innerHTML = "";
+      order.forEach((name, index) => {
+        const item = document.createElement("li");
+        const number = document.createElement("span");
+        const person = document.createElement("span");
+        number.className = "number";
+        number.textContent = index + 1;
+        person.textContent = name;
+        item.append(number, person);
+        orderList.appendChild(item);
+      });
+
+      emptyOrder.hidden = order.length > 0;
+      setCompleteMessage();
+      syncRollButton();
+      dieMeta.textContent = pluralizeSide(remaining.length);
+      syncFaceStates();
+
+      if (remaining.length === 0) {
+        status.textContent = order.length > 0 ? "That is the full update order for everyone currently on the die." : "No one is currently on the die.";
+      } else if (order.length > 0) {
+        status.textContent = `${remaining.length} ${remaining.length === 1 ? "person is" : "people are"} still waiting to be rolled.`;
+      }
+    }
+
+    function toggleAttendance(name) {
+      if (isRolling || order.includes(name)) return;
+
+      if (absent.has(name)) {
+        absent.delete(name);
+        if (!remaining.includes(name)) remaining.push(name);
+        status.textContent = `${name} is back on the die.`;
+      } else {
+        absent.add(name);
+        remaining = remaining.filter((person) => person !== name);
+        if (currentFaceName === name) currentFaceName = null;
+        status.textContent = `${name} was removed from the die.`;
+      }
+
+      render();
+    }
+
+    function roll() {
+      if (remaining.length === 0 || isRolling) return;
+
+      isRolling = true;
+      syncRollButton();
+      die.classList.remove("rolling");
+      void die.offsetWidth;
+      die.classList.add("rolling");
+      const name = pickRandomName();
+      const turns = faceTurns[name];
+      rollCount += 1;
+      currentFaceName = name;
+      syncFaceStates();
+      status.textContent = "Rolling the team die...";
+
+      window.requestAnimationFrame(() => {
+        die.style.transform = `translateZ(calc(var(--half-cube) * -1)) rotateX(${turns.x + rollCount * 720}deg) rotateY(${turns.y + rollCount * 720}deg) rotateZ(${turns.z}deg)`;
+      });
+
+      window.setTimeout(() => {
+        status.textContent = `${name} goes ${order.length}${remaining.length === 0 ? ", completing the round." : "."}`;
+        isRolling = false;
+        die.classList.remove("rolling");
+        render();
+        syncRollButton();
+      }, 1220);
+    }
+
+    function reset() {
+      remaining = [...team];
+      order = [];
+      absent = new Set();
+      isRolling = false;
+      rollCount = 0;
+      currentFaceName = null;
+      die.classList.remove("rolling");
+      die.style.transform = "translateZ(calc(var(--half-cube) * -1)) rotateX(-16deg) rotateY(24deg)";
+      status.textContent = "Start the meeting by rolling for the first update.";
+      render();
+    }
+
+    rollButton.addEventListener("click", roll);
+    resetButton.addEventListener("click", reset);
+    render();
+  </script>
+</body>
+</html>
