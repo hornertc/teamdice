@@ -6,7 +6,7 @@ A single-page browser app for randomly selecting morning team participants with 
 
 Run the program here:
 
-<a href="https://hornertc.github.io/teamdice/" target="_blank" rel="noopener noreferrer">https://hornertc.github.io/teamdice/</a>
+[https://hornertc.github.io/teamdice/](https://hornertc.github.io/teamdice/)
 
 ## Run locally
 
@@ -14,10 +14,8 @@ Open `index.html` in a browser.
 
 ## Deploy
 
-This is a static HTML app, so it can be hosted with GitHub Pages, Bitbucket static hosting, or any basic web server.
+This is a static HTML app, so it can be hosted with GitHub Pages or any basic web server.
 
 The GitHub Pages URL is:
 
-<a href="https://hornertc.github.io/teamdice/" target="_blank" rel="noopener noreferrer">https://hornertc.github.io/teamdice/</a>
-
-For Bitbucket-hosted static access, add this app to the `thorner1.bitbucket.io` site repo as a subfolder or use a dedicated Bitbucket workspace/site repository.
+[https://hornertc.github.io/teamdice/](https://hornertc.github.io/teamdice/)
